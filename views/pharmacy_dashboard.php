@@ -40,16 +40,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_drug'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_quotation'])) {
-    $conn->query("DELETE FROM quotations_preview WHERE session_id = '$session_id'");
-    $conn->query("DELETE FROM prescription_preview_images WHERE session_id = '$session_id'");
+    $drugs = $conn->query("SELECT * FROM quotations_preview WHERE session_id = '$session_id'");
+    
+    if ($drugs->num_rows > 0) {
+        $total_amount = 0;
 
-    echo "<script>alert('Quotation sent successfully!'); window.location='pharmacy_dashboard.php';</script>";
-    exit;
+        // Insert dummy prescription - replace 0 with real user_id if needed
+        $conn->query("INSERT INTO prescriptions (user_id) VALUES (0)");
+        $prescription_id = $conn->insert_id;
+
+        while ($drug = $drugs->fetch_assoc()) {
+            $total_amount += $drug['amount'];
+        }
+
+        $conn->query("INSERT INTO quotations (prescription_id, total_amount) VALUES ($prescription_id, $total_amount)");
+        $quotation_id = $conn->insert_id;
+
+        $drugs->data_seek(0);
+        while ($drug = $drugs->fetch_assoc()) {
+            $drug_name = $conn->real_escape_string($drug['drug_name']);
+            $qty = $drug['quantity'];
+            $unit_price = $drug['unit_price'];
+            $conn->query("INSERT INTO quotation_items (quotation_id, drug_name, quantity, unit_price) 
+                          VALUES ($quotation_id, '$drug_name', $qty, $unit_price)");
+        }
+
+        $conn->query("DELETE FROM quotations_preview WHERE session_id = '$session_id'");
+        $conn->query("DELETE FROM prescription_preview_images WHERE session_id = '$session_id'");
+
+        echo "<script>alert('Quotation sent successfully!'); window.location='pharmacy_dashboard.php';</script>";
+        exit;
+    } else {
+        echo "<script>alert('No drugs found in preview to send!');</script>";
+    }
 }
 
 $result = $conn->query("SELECT * FROM quotations_preview WHERE session_id = '$session_id'");
 $images = $conn->query("SELECT * FROM prescription_preview_images WHERE session_id = '$session_id'");
-
 ?>
 
 <!DOCTYPE html>
@@ -118,10 +145,7 @@ $images = $conn->query("SELECT * FROM prescription_preview_images WHERE session_
                 <td><?= number_format($item['unit_price'], 2) ?></td>
                 <td><?= number_format($item['amount'], 2) ?></td>
             </tr>
-            <?php
-                endwhile;
-            else:
-            ?>
+            <?php endwhile; else: ?>
             <tr>
                 <td colspan="4" class="text-center">No items added.</td>
             </tr>

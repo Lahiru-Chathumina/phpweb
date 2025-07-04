@@ -29,3 +29,21 @@ CREATE TABLE prescription_preview_images (
     image_path VARCHAR(255),
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE quotations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prescription_id INT NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (prescription_id) REFERENCES prescriptions(id)
+);
+
+CREATE TABLE quotation_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    quotation_id INT NOT NULL,
+    drug_name VARCHAR(100),
+    quantity INT,
+    unit_price DECIMAL(10,2),
+    FOREIGN KEY (quotation_id) REFERENCES quotations(id)
+);
