@@ -13,15 +13,6 @@ CREATE TABLE users (
     role ENUM('user', 'pharmacy') DEFAULT 'user'
 );
 
-CREATE TABLE quotations_preview (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    session_id VARCHAR(255),
-    drug_name VARCHAR(100),
-    quantity INT,
-    unit_price DECIMAL(10,2),
-    amount DECIMAL(10,2),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
 CREATE TABLE prescription_preview_images (
     id INT AUTO_INCREMENT PRIMARY KEY,

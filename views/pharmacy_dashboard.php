@@ -45,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_quotation'])) {
     if ($drugs->num_rows > 0) {
         $total_amount = 0;
 
-        // Insert dummy prescription - replace 0 with real user_id if needed
         $conn->query("INSERT INTO prescriptions (user_id) VALUES (0)");
         $prescription_id = $conn->insert_id;
 

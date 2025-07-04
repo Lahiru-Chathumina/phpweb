@@ -12,6 +12,10 @@ require_once '../db.php';
 $user_id = $_SESSION['user_id'];
 $session_id = session_id();
 
+$preview_items = $conn->query("
+    SELECT * FROM quotations_preview WHERE session_id = '$session_id'
+");
+
 $quotations = $conn->query("
     SELECT q.*, p.id AS prescription_id 
     FROM quotations q 
@@ -19,14 +23,16 @@ $quotations = $conn->query("
     WHERE p.user_id = $user_id
     ORDER BY q.created_at DESC
 ");
-
-$preview_items = $conn->query("
-    SELECT * FROM quotations_preview WHERE session_id = '$session_id'
-");
 ?>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
 <div class="container mt-4">
     <h2 class="text-primary">User Dashboard</h2>
     <div class="alert alert-info">
@@ -82,7 +88,6 @@ $preview_items = $conn->query("
                         <?= ucfirst($q['status']) ?>
                     </span>
                 </div>
-
                 <div class="card-body">
                     <table class="table table-sm table-bordered">
                         <thead class="table-light">
@@ -113,7 +118,7 @@ $preview_items = $conn->query("
                         </tbody>
                     </table>
 
-                    <?php if ($q['status'] == 'pending'): ?>
+                    <?php if ($q['status'] === 'pending'): ?>
                         <form method="POST" action="../actions/accept.php" class="d-inline">
                             <input type="hidden" name="qid" value="<?= $q['id'] ?>">
                             <button class="btn btn-success btn-sm">Accept</button>
@@ -132,3 +137,5 @@ $preview_items = $conn->query("
         </div>
     <?php endif; ?>
 </div>
+</body>
+</html>
