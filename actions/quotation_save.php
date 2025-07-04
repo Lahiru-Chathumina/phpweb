@@ -2,47 +2,37 @@
 session_start();
 require_once '../db.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'pharmacy') {
-    header('Location: ../views/login.php');
-    exit;
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $pharmacy_id = $_SESSION['user_id'];
-    $prescription_id = intval($_POST['prescription_id']);
-    $price = floatval($_POST['price']);
-    $notes = trim($_POST['notes']);
+    $prescriptionId = intval($_POST['prescription_id']);
+    $items = json_decode($_POST['drugs_json'], true);
 
-    if (!$prescription_id || !$price) {
-        $_SESSION['error'] = 'Please fill all required fields.';
-        header("Location: ../views/quotation_form.php?prescription_id=$prescription_id");
+    if (!$prescriptionId || empty($items)) {
+        echo "<script>alert('Invalid submission.'); window.history.back();</script>";
         exit;
     }
 
-    $stmt = $conn->prepare("INSERT INTO quotations (prescription_id, pharmacy_id, price, notes, status) VALUES (?, ?, ?, ?, 'pending')");
-    $stmt->bind_param("iids", $prescription_id, $pharmacy_id, $price, $notes);
+    $total = array_sum(array_column($items, 'amount'));
 
-    if ($stmt->execute()) {
-        $userResult = $conn->query("SELECT u.email FROM users u JOIN prescriptions p ON u.id = p.user_id WHERE p.id = $prescription_id");
-        if ($userResult && $userRow = $userResult->fetch_assoc()) {
-            $to = $userRow['email'];
-            $subject = "New Quotation for Your Prescription";
-            $message = "Dear user,\n\nA new quotation has been prepared for your uploaded prescription. Please log in to your account to review and respond.\n\nThank you.";
-            $headers = "From: pharmacy@example.com";
+    $stmt = $conn->prepare("INSERT INTO quotations (prescription_id, total_amount) VALUES (?, ?)");
+    $stmt->bind_param("id", $prescriptionId, $total);
+    $stmt->execute();
+    $quotationId = $stmt->insert_id;
+    $stmt->close();
 
-            mail($to, $subject, $message, $headers);
-        }
+    $itemStmt = $conn->prepare("INSERT INTO quotation_items (quotation_id, drug_name, quantity, unit_price) VALUES (?, ?, ?, ?)");
+    foreach ($items as $item) {
+        $drug = $item['drug'];
+        $quantityParts = explode('x', strtolower($item['quantity']));
+        $qty = isset($quantityParts[0], $quantityParts[1]) ? intval($quantityParts[0]) * intval($quantityParts[1]) : 0;
+        $price = floatval($item['price']);
 
-        $_SESSION['success'] = 'Quotation submitted successfully.';
-        header('Location: ../views/dashboard_pharmacy.php');
-        exit;
-    } else {
-        $_SESSION['error'] = 'Failed to submit quotation.';
-        header("Location: ../views/quotation_form.php?prescription_id=$prescription_id");
-        exit;
+        $itemStmt->bind_param("isid", $quotationId, $drug, $qty, $price);
+        $itemStmt->execute();
     }
+    $itemStmt->close();
+
+    echo "<script>alert('Quotation sent successfully.'); window.location.href = '../pharmacy_dashboard.php';</script>";
 } else {
-    header('Location: ../views/dashboard_pharmacy.php');
-    exit;
+    echo "<script>alert('Invalid request.'); window.location.href = '../index.php';</script>";
 }
 ?>

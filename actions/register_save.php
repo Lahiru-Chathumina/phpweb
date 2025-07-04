@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 require_once '../db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (strlen($password) < 8) $errors[] = "Password must be at least 8 characters";
     if (!in_array($role, ['user', 'pharmacy'])) $errors[] = "Invalid user role";
 
-    // Check if email already exists
     $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();

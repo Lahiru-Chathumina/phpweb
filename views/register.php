@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+  session_start();
+}
 ?>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,7 +13,6 @@ session_start();
     </div>
     <div class="card-body">
 
-      <!-- Show success or error messages -->
       <?php
       if (!empty($_SESSION['errors'])) {
           foreach ($_SESSION['errors'] as $error) {

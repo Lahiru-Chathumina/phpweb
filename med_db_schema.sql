@@ -13,37 +13,19 @@ CREATE TABLE users (
     role ENUM('user', 'pharmacy') DEFAULT 'user'
 );
 
-CREATE TABLE prescriptions (
+CREATE TABLE quotations_preview (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    note TEXT,
-    delivery_address TEXT,
-    delivery_slot VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
-CREATE TABLE prescription_images (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    prescription_id INT,
-    image_path VARCHAR(255),
-    FOREIGN KEY (prescription_id) REFERENCES prescriptions(id)
-);
-
-CREATE TABLE quotations (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    prescription_id INT,
-    total_amount DECIMAL(10,2),
-    status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (prescription_id) REFERENCES prescriptions(id)
-);
-
-CREATE TABLE quotation_items (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    quotation_id INT,
+    session_id VARCHAR(255),
     drug_name VARCHAR(100),
     quantity INT,
     unit_price DECIMAL(10,2),
-    FOREIGN KEY (quotation_id) REFERENCES quotations(id)
+    amount DECIMAL(10,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE prescription_preview_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(255),
+    image_path VARCHAR(255),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

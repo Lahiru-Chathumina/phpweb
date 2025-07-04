@@ -2,48 +2,46 @@
 session_start();
 require_once '../db.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email']);
-    $password = $_POST['password'];
+$email = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
+$errors = [];
 
-    if (!$email || !$password) {
-        $_SESSION['error'] = 'Please enter both email and password.';
-        header('Location: ../views/login.php');
-        exit;
-    }
+if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $errors[] = "Invalid email format.";
+}
+if (empty($password)) {
+    $errors[] = "Password is required.";
+}
 
-    $stmt = $conn->prepare("SELECT id, username, password, role FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $stmt->store_result();
-
-    if ($stmt->num_rows === 1) {
-        $stmt->bind_result($id, $username, $password_hash, $role);
-        $stmt->fetch();
-
-        if (password_verify($password, $password_hash)) {
-            $_SESSION['user_id'] = $id;
-            $_SESSION['username'] = $username;
-            $_SESSION['role'] = $role;
-
-            if ($role === 'pharmacy') {
-                header('Location: ../views/dashboard_pharmacy.php');
-            } else {
-                header('Location: ../views/dashboard_user.php');
-            }
-            exit;
-        } else {
-            $_SESSION['error'] = 'Incorrect password.';
-            header('Location: ../views/login.php');
-            exit;
-        }
-    } else {
-        $_SESSION['error'] = 'Email not found.';
-        header('Location: ../views/login.php');
-        exit;
-    }
-} else {
-    header('Location: ../views/login.php');
+if (!empty($errors)) {
+    $_SESSION['login_errors'] = $errors;
+    header("Location: ../views/login.php");
     exit;
 }
-?>
+
+$stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+$stmt->bind_param("s", $email);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+
+if ($user && password_verify($password, $user['password'])) {
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['user_name'] = $user['name'];
+    $_SESSION['role'] = $user['role'];
+    $_SESSION['logged_in'] = true;
+
+    if ($user['role'] === 'pharmacy') {
+        header("Location: ../views/pharmacy_dashboard.php");
+    }  if ($user['role'] === 'user') {
+        header("Location: ../views/user_dashboard.php");
+    } 
+    else {
+        header("Location: ../views/user_dashboard.php");
+    }
+    exit;
+} else {
+    $_SESSION['login_errors'] = ["Invalid email or password."];
+    header("Location: ../views/login.php");
+    exit;
+}
