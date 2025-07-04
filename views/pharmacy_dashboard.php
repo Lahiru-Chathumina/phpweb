@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_images']) && i
             $filePath = $uploadDir . $fileName;
 
             if (move_uploaded_file($tmpName, $filePath)) {
-                $filePathDb = $conn->real_escape_string($filePath);
+                $filePathDb = $conn->real_escape_string('uploads/' . $fileName);
                 $conn->query("INSERT INTO prescription_preview_images (session_id, image_path) VALUES ('$session_id', '$filePathDb')");
             }
         }

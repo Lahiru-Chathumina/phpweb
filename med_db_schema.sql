@@ -38,3 +38,12 @@ CREATE TABLE quotation_items (
     unit_price DECIMAL(10,2),
     FOREIGN KEY (quotation_id) REFERENCES quotations(id)
 );
+
+CREATE TABLE quotations_preview (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(255),
+    drug_name VARCHAR(100),
+    quantity INT,
+    unit_price DECIMAL(10,2),
+    amount DECIMAL(10,2)
+);
